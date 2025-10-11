@@ -99,7 +99,8 @@ VideoEditing
 ├───FFMPEG
 └───transcriptions
 ```
-
+> [!info]
+> You will need to dowload ffmeg.exe and place the applicaiton in the file directory
 
 ---
 ## 💻 AutoCaptions.py
