@@ -24,6 +24,15 @@ from PySide6.QtWidgets import (
 
 from PySide6.QtGui import QIcon
 
+def resource_path(relative_path):
+    """Get absolute path to resource ."""
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 AUTOCAPTIONS_SCRIPT = os.path.join(SCRIPT_DIR, 'AutoCaptions.py')
 DEFAULT_OUT = os.path.join(SCRIPT_DIR, 'transcriptions')
@@ -518,15 +527,20 @@ def main():
 
     app = QApplication(sys.argv)
     # set the application icon (affects titlebar and taskbar)
+    icon_path = None
     try:
         icon_path = _resolved_icon_path()
         if icon_path:
             app.setWindowIcon(QIcon(icon_path))
     except Exception:
-        pass
+        icon_path = None
 
     win = MainWindow()
-    win.setWindowIcon(QIcon(icon_path))
+    try:
+        if icon_path:
+            win.setWindowIcon(QIcon(icon_path))
+    except Exception:
+        pass
     win.show()
     sys.exit(app.exec())
 

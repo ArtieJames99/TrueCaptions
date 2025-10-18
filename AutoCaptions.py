@@ -306,7 +306,7 @@ def mp4_to_srt(mp4_file, line_mode=False):
             cumulative += durations[i-1]
 
         stitched = {'segments': all_segments}
-        max_chars = int(os.environ.get('AUTOCAPTIONS_MAXCHARS', '20'))
+        max_chars = int(os.environ.get('AUTOCAPTIONS_MAXCHARS', '15'))
         out_dir = os.environ.get('AUTOCAPTIONS_OUTDIR', TRANSCRIPTIONS_DIR)
         return save_srt(stitched, out_dir, mp4_file, line_mode=line_mode, max_chars=max_chars)
     finally:
@@ -325,7 +325,7 @@ def main():
         raise FileNotFoundError(f"File not found: {mp4_file}")
 
     # Default mode is normal
-    line_mode = False
+    line_mode = True
     # simple arg parsing for --mode and optional --max-chars
     if '--mode' in sys.argv:
         try:
