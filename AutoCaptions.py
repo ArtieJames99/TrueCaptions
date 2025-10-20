@@ -47,7 +47,7 @@ except ModuleNotFoundError:
     raise ModuleNotFoundError("Whisper is not installed in this Python environment.")
 
 # === Step 3: Helper function to wrap text for line mode ===
-def wrap_text_line_mode(text, max_chars=15):
+def wrap_text_line_mode(text, max_chars):
     words = text.split()
     lines = []
     current_line = ""
@@ -80,6 +80,7 @@ def split_words_into_lines(words, max_chars=20):
             return
         text = " ".join(w.get("word", "").strip() for w in current_words).strip()
         start = current_words[0].get("start")
+        # Use the last word's end timestamp so the caption end is after the last word
         end = current_words[-1].get("end")
         lines.append({"text": text, "start": start, "end": end})
         current_words = []
@@ -128,6 +129,10 @@ def save_srt(result, output_dir, mp4_file, line_mode=False, max_chars=20):
 
     # padding (in seconds) applied to caption end times to avoid cutting words early
     padding = float(os.environ.get('AUTOCAPTIONS_PADDING', '0.08'))
+    # minimum gap between consecutive captions (seconds) to avoid small overlaps
+    min_gap = float(os.environ.get('AUTOCAPTIONS_MIN_GAP', '0.01'))
+    # minimum duration for a caption (seconds)
+    min_dur = float(os.environ.get('AUTOCAPTIONS_MIN_DUR', '0.05'))
 
     def format_time(seconds):
         # guard against None
@@ -163,10 +168,38 @@ def save_srt(result, output_dir, mp4_file, line_mode=False, max_chars=20):
                     if start is not None and end is not None and end <= start:
                         end = start + 0.001
                     text_line = wl.get("text", "")
+                    # enforce minimum duration
+                    if end is not None and start is not None and (end - start) < min_dur:
+                        end = start + min_dur
+                    # enforce min gap from previous caption (last_end stored in outer scope)
+                    prev_end = lines and None
+                    # compute previous end from `lines` if available (fast parse last timing)
+                    if len(lines) >= 2:
+                        try:
+                            # previous timing line is two lines above the last blank ("\n"); find last timing
+                            # safe fallback: use last_end variable (tracked below)
+                            pass
+                        except Exception:
+                            pass
+                    # ensure we don't overlap prior caption: use the last_end variable if set
+                    try:
+                        if 'last_srt_end' in locals():
+                            if start is not None and start < last_srt_end + min_gap:
+                                start = last_srt_end + min_gap
+                                if end is not None and end <= start:
+                                    end = start + min_dur
+                    except Exception:
+                        pass
+
                     lines.append(f"{index}")
                     lines.append(f"{format_time(start)} --> {format_time(end)}")
                     lines.append(text_line)
                     lines.append("")
+                    # track the end of the last written caption for gap enforcement
+                    try:
+                        last_srt_end = end if end is not None else start
+                    except Exception:
+                        last_srt_end = end
                     # emit progress so UI can parse it
                     try:
                         print(f"PROGRESS: {index}/{total_captions}", flush=True)
@@ -188,10 +221,26 @@ def save_srt(result, output_dir, mp4_file, line_mode=False, max_chars=20):
                     else:
                         start = seg_start or 0
                         end = seg_end or start
+                    # enforce minimum duration
+                    if end is not None and start is not None and (end - start) < min_dur:
+                        end = start + min_dur
+                    # prevent tiny overlap with previous caption
+                    try:
+                        if 'last_srt_end' in locals() and start is not None and start < last_srt_end + min_gap:
+                            start = last_srt_end + min_gap
+                            if end is not None and end <= start:
+                                end = start + min_dur
+                    except Exception:
+                        pass
+
                     lines.append(f"{index}")
                     lines.append(f"{format_time(start)} --> {format_time(end)}")
                     lines.append(tline)
                     lines.append("")
+                    try:
+                        last_srt_end = end if end is not None else start
+                    except Exception:
+                        last_srt_end = end
                     try:
                         print(f"PROGRESS: {index}/{total_captions}", flush=True)
                     except Exception:
@@ -200,7 +249,19 @@ def save_srt(result, output_dir, mp4_file, line_mode=False, max_chars=20):
         else:
             # normal mode: one caption per segment
             lines.append(f"{index}")
-            lines.append(f"{format_time(seg_start)} --> {format_time(seg_end)}")
+            # enforce min dur and gap for normal mode too
+            start = seg_start
+            end = seg_end
+            if end is not None and start is not None and (end - start) < min_dur:
+                end = start + min_dur
+            try:
+                if 'last_srt_end' in locals() and start is not None and start < last_srt_end + min_gap:
+                    start = last_srt_end + min_gap
+                    if end is not None and end <= start:
+                        end = start + min_dur
+            except Exception:
+                pass
+            lines.append(f"{format_time(start)} --> {format_time(end)}")
             lines.append(text)
             lines.append("")
             try:
@@ -280,14 +341,36 @@ def mp4_to_srt(mp4_file, line_mode=False):
                 dur = chunk_seconds
             durations.append(dur)
 
-        cumulative = 0.0
+        last_end = 0.0  # keep track of the last segment end time
+        # use padding env if provided; fallback to small value
+        extra_delay = float(os.environ.get('AUTOCAPTIONS_PADDING', '0.08'))
+        cumulative = 0.0  # initialize cumulative offset for stitched chunks
+
         for i, f in enumerate(seg_files, start=1):
             # transcribe chunk
             chunk_result = model.transcribe(f, word_timestamps=True)
+
             # adjust timestamps by cumulative offset
             for seg in chunk_result.get('segments', []):
-                seg['start'] = seg.get('start', 0.0) + cumulative
-                seg['end'] = seg.get('end', 0.0) + cumulative
+                start = seg.get('start', 0.0) + cumulative
+                # handle None end gracefully
+                raw_end = seg.get('end', None)
+                if raw_end is not None:
+                    end = raw_end + cumulative + extra_delay
+                else:
+                    # fallback to a small duration if end is missing
+                    end = start + 0.3
+
+                # prevent overlap with previous segment
+                if start < last_end:
+                    start = last_end + 0.01  # ensure at least 10ms gap
+                if end <= start:
+                    end = start + 0.3  # ensure caption is visible for a minimum duration
+
+                # update segment timestamps
+                seg['start'] = start
+                seg['end'] = end
+
                 # adjust words if present
                 if 'words' in seg:
                     for w in seg['words']:
@@ -295,7 +378,9 @@ def mp4_to_srt(mp4_file, line_mode=False):
                             w['start'] = w.get('start') + cumulative
                         if 'end' in w:
                             w['end'] = w.get('end') + cumulative
+
                 all_segments.append(seg)
+                last_end = end  # update for next segment
 
             # report chunk progress
             try:
@@ -324,15 +409,22 @@ def main():
     if not os.path.isfile(mp4_file):
         raise FileNotFoundError(f"File not found: {mp4_file}")
 
-    # Default mode is normal
-    line_mode = True
-    # simple arg parsing for --mode and optional --max-chars
+    # Default mode is normal (not forced to line)
+    line_mode = False
+
+    # First honor environment variable set by GUI: AUTOCAPTIONS_MODE='line'
+    if os.environ.get('AUTOCAPTIONS_MODE', '').lower() == 'line':
+        line_mode = True
+
+    # simple arg parsing for --mode and optional --max-chars; CLI overrides env
     if '--mode' in sys.argv:
         try:
             mode_idx = sys.argv.index('--mode')
             mode_val = sys.argv[mode_idx + 1].lower()
             if mode_val == 'line':
                 line_mode = True
+            else:
+                line_mode = False
         except Exception:
             pass
 
