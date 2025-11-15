@@ -104,28 +104,6 @@ VideoEditing
 ---
 ## 💻 AutoCaptions.py
 ---
-## 📂 Integration with Obsidian
-
-This project is easily documented in Obsidian:
-
-- [[AutoCaptions-Whitepaper|Project Whitepaper]] – for long-term documentation.
-    
-- Daily log notes: `YYYY-MM-DD AutoCaptions Run`.
-    
-- Task tracking:
-    
-    - Package as `.exe` with PyInstaller
-        
-    - Add `.vtt` export
-        
-    - Expand batch processing support
-        
-
-> [!info]  
-> Store all outputs inside a `Transcriptions/` folder. Use Obsidian search to instantly find completed `.srt` files.
-
-
----
 ## 🔮 Future Work
 
 - Export to **WebVTT** and **TXT** formats.
