@@ -24,6 +24,15 @@ from PySide6.QtWidgets import (
 
 from PySide6.QtGui import QIcon
 
+def resource_path(relative_path):
+    """Get absolute path to resource ."""
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 AUTOCAPTIONS_SCRIPT = os.path.join(SCRIPT_DIR, 'AutoCaptions.py')
 DEFAULT_OUT = os.path.join(SCRIPT_DIR, 'transcriptions')
@@ -355,29 +364,30 @@ class MainWindow(QWidget):
         try:
             for line in text.splitlines():
                 line = line.strip()
-                # parse chunk-level progress printed by backend
+                # when we see progress lines, switch to determinate
+                if line.startswith('PROGRESS_CHUNK:') or line.startswith('PROGRESS:'):
+                    try:
+                        self.progress.setRange(0, 100)
+                    except Exception:
+                        pass
                 if line.startswith('PROGRESS_CHUNK:'):
-                    parts = line.split(':', 1)[1].strip()
-                    if '/' in parts:
-                        a, b = parts.split('/')
-                        try:
-                            a = int(a.strip())
-                            b = int(b.strip())
-                            if b > 0:
-                                pct = int(a * 100 / b)
-                                self.progress.setValue(pct)
-                        except Exception:
-                            pass
-                    continue
+                    try:
+                        parts = line.split(':', 1)[1].strip().split('/')
+                        cur = int(parts[0])
+                        total = int(parts[1]) if len(parts) > 1 else 100
+                        pct = int((cur / max(1, total)) * 100)
+                        self.progress.setValue(pct)
+                    except Exception:
+                        pass
                 if line.startswith('PROGRESS:'):
-                    parts = line.split(':', 1)[1].strip()
-                    if '/' in parts:
-                        a, b = parts.split('/')
-                        a = int(a.strip())
-                        b = int(b.strip())
-                        if b > 0:
-                            pct = int(a * 100 / b)
-                            self.progress.setValue(pct)
+                    try:
+                        parts = line.split(':', 1)[1].strip().split('/')
+                        cur = int(parts[0])
+                        total = int(parts[1]) if len(parts) > 1 else 100
+                        pct = int((cur / max(1, total)) * 100)
+                        self.progress.setValue(pct)
+                    except Exception:
+                        pass
         except Exception:
             pass
 
@@ -448,9 +458,18 @@ class MainWindow(QWidget):
 
             self.log.clear()
             self.progress.setValue(0)
+            # show indeterminate busy state while backend boots
+            try:
+                self.progress.setRange(0, 0)  # indeterminate
+            except Exception:
+                pass
             # choose python exe: prefer provided one, else use embedded venv python for build environment
             chosen_python = python_path if python_path and os.path.isfile(python_path) else sys.executable
-            self.worker = SubprocessWorker(chosen_python, script_path, args=[video_file] )
+            sub_args = [video_file]
+            if mode_line:
+                # explicitly pass CLI mode to subprocess as a fallback
+                sub_args += ['--mode', 'line']
+            self.worker = SubprocessWorker(chosen_python, script_path, args=sub_args )
             self.worker.log_line.connect(self.append_log)
             self.worker.finished.connect(self._finished)
             self.worker.start()
@@ -518,15 +537,20 @@ def main():
 
     app = QApplication(sys.argv)
     # set the application icon (affects titlebar and taskbar)
+    icon_path = None
     try:
         icon_path = _resolved_icon_path()
         if icon_path:
             app.setWindowIcon(QIcon(icon_path))
     except Exception:
-        pass
+        icon_path = None
 
     win = MainWindow()
-    win.setWindowIcon(QIcon(icon_path))
+    try:
+        if icon_path:
+            win.setWindowIcon(QIcon(icon_path))
+    except Exception:
+        pass
     win.show()
     sys.exit(app.exec())
 
