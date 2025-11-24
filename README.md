@@ -61,61 +61,50 @@ flowchart TD
 
 ### Installation
 
+> [!warning]  
+> This is best done on a virtual environment. Make sure python is installed on your system** (e.g., `C:\pyenv` or `E:\pyenv`).
+
+**Build Virtual Environment**
+```
+Python -m venv .venv
+```
+**start .venv**
+```
+.venv/scripts/activate
+```
+**Install Depenencies**
 ```bash
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 pip install openai-whisper srt
+pip install pyinstaller
 ```
+Or
 
-> [!warning]  
-> On Windows systems with long path limitations, install into a **short-path environment** (e.g., `C:\pyenv` or `E:\pyenv`).
-
-### Command Line
-
-```bash
-python mp4_to_srt.py video.mp4
 ```
-
-**Examples**
-
-```bash
-# Line mode, 4 words per caption, one line only
-python mp4_to_srt.py video.mp4 --mode line --max-words 4
-
-# Word-by-word captions
-python mp4_to_srt.py video.mp4 --mode word
-
-# Allow multi-line, 6 words per caption
-python mp4_to_srt.py video.mp4 --mode line --max-words 6 --multiline
+Pip install -r requirements.txt
 ```
----
+**Download FFMPEG.exe**
+https://www.ffmpeg.org/download.html
+Download and place ffmpeg into a folder named ffmpeg
+
 ## File Structure
 ```plaintext
 VideoEditing
 │   AutoCaptions.py
 │   AutoCaptions_GUI.py
-│   ffmpeg.exe
+│   TrueCaptions.py
 │
 ├───__pycache__
-├───FFMPEG
+├───ffmpeg
+|   |--- ffmpeg.exe
 └───transcriptions
 ```
-
-
+**Get EXE**
+From file explorer, launch bulid.bat. Wait for install.
+Your working application will be found in dist/truecaptions/
 ---
-## 💻 AutoCaptions.py
----
-## 🔮 Future Work
 
-- Export to **WebVTT** and **TXT** formats.
-    
-- GPU acceleration for faster transcription.
-    
-- Batch video processing.
-    
-- Advanced caption styling (timing adjustments, line wrapping).
-    
-- Improved error recovery and restart options.
-
+## 💻 TrueCaptions.exe
 ---
 
 ## 📌 References
@@ -135,7 +124,7 @@ VideoEditing
 
 - **Author:** Elder AJ F Jex
     
-- **Version:** 1.0
+- **Version:** 1.2
     
 - **License:** 
     
