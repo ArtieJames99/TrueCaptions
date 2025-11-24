@@ -15,6 +15,12 @@ os.environ.setdefault('PYTHONIOENCODING', 'utf-8')
 # === Configuration ===
 import pathlib
 
+def resource_path(relative_path):
+    """ Get absolute path of resources bundled with PyInstaller """
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
+
 # support running from a frozen bundle (PyInstaller)
 if getattr(sys, 'frozen', False):
     # when frozen, resources are unpacked to sys._MEIPASS
@@ -23,7 +29,7 @@ else:
     BASE_DIR = pathlib.Path(__file__).resolve().parent
 
 SCRIPT_DIR = str(BASE_DIR)
-FFMPEG_EXE = os.path.join(SCRIPT_DIR, "ffmpeg.exe")
+FFMPEG_EXE = resource_path("ffmpeg/ffmpeg.exe")
 FFMPEG_DIR = os.path.dirname(FFMPEG_EXE)
 # allow overriding output dir via env, otherwise use a transcriptions folder next to the script
 TRANSCRIPTIONS_DIR = os.environ.get('AUTOCAPTIONS_OUTDIR', str(pathlib.Path(SCRIPT_DIR) / 'transcriptions'))
