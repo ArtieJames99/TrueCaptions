@@ -1,3 +1,9 @@
+"""
+TrueCaptions
+Copyright (c) 2025 AJ F. Jex
+Licensed under the MIT License
+"""
+
 # -*- coding: utf-8 -*-
 import os
 import sys
@@ -450,3 +456,4 @@ if __name__ == "__main__":
         # Print the error and exit with non-zero code when running as script
         print(f"ERROR: {e}")
         sys.exit(1)
+
