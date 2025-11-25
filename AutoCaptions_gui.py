@@ -1,6 +1,6 @@
 """
 TrueCaptions
-Copyright (c) 2025 AJ
+Copyright (c) 2025 AJ F. Jex
 Licensed under the MIT License
 """
 
@@ -563,4 +563,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
