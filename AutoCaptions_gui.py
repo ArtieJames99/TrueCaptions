@@ -1,3 +1,9 @@
+"""
+TrueCaptions
+Copyright (c) 2025 AJ
+Licensed under the MIT License
+"""
+
 import os
 import sys
 import subprocess
@@ -557,3 +563,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
