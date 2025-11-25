@@ -84,12 +84,15 @@ Or
 Pip install -r requirements.txt
 ```
 **Download FFMPEG.exe**
-https://www.ffmpeg.org/download.html
-Download and place ffmpeg into a folder named ffmpeg
+[https://www.ffmpeg.org/download.html](https://www.gyan.dev/ffmpeg/builds)
+Find the Full.zip and download. the ffmpeg.exe then can be moved to the folder ffmpeg under TrueCaptions. 
+(ffmpeg.exe will usually be found under the bin folder.) 
+Note: The zip file will look something like this: 
+ffmpeg-release-full.7z
 
 ## File Structure
 ```plaintext
-VideoEditing
+TrueCaptions
 │   AutoCaptions.py
 │   AutoCaptions_GUI.py
 │   TrueCaptions.py
@@ -110,6 +113,8 @@ Your working application will be found in dist/truecaptions/
 ## 📌 References
 
 - [OpenAI Whisper](https://github.com/openai/whisper)
+
+- [FFMPEG](https://www.gyan.dev/ffmpeg/builds)
     
 - PySide6
     
