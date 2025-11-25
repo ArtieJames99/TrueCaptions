@@ -1,3 +1,9 @@
+"""
+TrueCaptions
+Copyright (c) 2025 AJ F. Jex
+Licensed under the MIT License
+"""
+
 import sys
 import os
 
@@ -20,3 +26,4 @@ except Exception as e:
 
 if __name__ == "__main__":
     AutoCaptions_gui.main()    # Your GUI’s entry function
+
