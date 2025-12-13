@@ -1,2 +1,2 @@
-go to https://www.ffmpeg.org/download.html to download the ffmpeg package. 
+go to https://www.gyan.dev/ffmpeg/builds/ to download ffmpeg-release-essentials.zip. 
 Place the EXE package in this folder. 
