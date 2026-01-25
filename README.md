@@ -102,9 +102,16 @@ TrueCaptions
 |   |--- ffmpeg.exe
 └───transcriptions
 ```
+---
+## Full-Application
+> [!info]
+> You will need to dowload ffmeg.exe and place the applicaiton in the file directory
+
+=======
 **Get EXE**
 From file explorer, launch bulid.bat. Wait for install.
 Your working application will be found in dist/truecaptions/
+
 ---
 
 ## 💻 TrueCaptions.exe
